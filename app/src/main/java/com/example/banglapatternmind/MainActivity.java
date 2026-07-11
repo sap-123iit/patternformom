@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private ProgressBar progress;
     private LinearLayout optionsBox;
     private Button updateButton;
+    private Button backButton;
 
     private int index = 0;
     private int score = 0;
@@ -105,6 +106,7 @@ public class MainActivity extends Activity {
         optionsBox.setGravity(Gravity.CENTER);
 
         updateButton = button("নতুন প্রশ্ন আনুন");
+        backButton = button("পিছনে যান");
         footerText = text("prepared by Saptarshi Das", 14, false);
         footerText.setPadding(0, dp(16), 0, dp(8));
 
@@ -115,6 +117,7 @@ public class MainActivity extends Activity {
         root.addView(questionText);
         root.addView(optionsBox);
         root.addView(updateButton);
+        root.addView(backButton);
         View spacer = new View(this);
         root.addView(spacer, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
@@ -125,11 +128,12 @@ public class MainActivity extends Activity {
 
     private void showHome() {
         title.setText("maa er jonno -- for Chhabi Das");
-        subtitle.setText("প্রতিটি সেশনে ২০টি number series প্রশ্ন। একটি মোড বেছে নিন।");
+        subtitle.setText("প্রতিটি সেশনে 20টি number series প্রশ্ন। একটি মোড বেছে নিন।");
         progress.setVisibility(View.GONE);
         scoreText.setText("");
         questionText.setText("আজ কোন স্তরের অনুশীলন করবেন?");
         optionsBox.removeAllViews();
+        backButton.setVisibility(View.GONE);
 
         Button easyButton = button("সহজ");
         easyButton.setOnClickListener(v -> startSession(MODE_EASY));
@@ -150,7 +154,7 @@ public class MainActivity extends Activity {
         currentMode = mode;
         List<Question> questions = questionBanks.get(mode);
         if (questions == null || questions.size() < SESSION_SIZE) {
-            dialog("প্রশ্ন কম আছে", "এই মোডে কমপক্ষে ২০টি প্রশ্ন দরকার।");
+            dialog("প্রশ্ন কম আছে", "এই মোডে কমপক্ষে 20টি প্রশ্ন দরকার।");
             return;
         }
         session.clear();
@@ -173,6 +177,9 @@ public class MainActivity extends Activity {
         questionText.setText(q.prompt);
         optionsBox.removeAllViews();
         updateButton.setVisibility(View.GONE);
+        backButton.setText("পিছনে যান");
+        backButton.setVisibility(View.VISIBLE);
+        backButton.setOnClickListener(v -> showHome());
 
         for (int i = 0; i < q.options.size(); i++) {
             final int optionIndex = i;
@@ -228,6 +235,7 @@ public class MainActivity extends Activity {
         optionsBox.addView(againButton);
         optionsBox.addView(homeButton);
         updateButton.setVisibility(View.GONE);
+        backButton.setVisibility(View.GONE);
     }
 
     private void loadQuestions() {
@@ -373,14 +381,7 @@ public class MainActivity extends Activity {
     }
 
     private String banglaNumber(int number) {
-        char[] bengaliDigits = {'০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'};
-        String source = String.valueOf(number);
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < source.length(); i++) {
-            char c = source.charAt(i);
-            builder.append(Character.isDigit(c) ? bengaliDigits[c - '0'] : c);
-        }
-        return builder.toString();
+        return String.valueOf(number);
     }
 
     private static class Question {

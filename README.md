@@ -1,6 +1,6 @@
 # মনের প্যাটার্ন
 
-এই Android app-টি Bengali number-series practice sessions-এর জন্য বানানো। প্রতিটি সেশনে ২০টি প্রশ্ন আসে, প্রশ্নগুলো shuffled হয়, এবং শেষে স্কোর দেখা যায়। এতে তিনটি mode আছে: সহজ, মাঝারি, কঠিন।
+এই Android app-টি Bengali number-series practice sessions-এর জন্য বানানো। প্রতিটি সেশনে 20টি প্রশ্ন আসে, প্রশ্নগুলো shuffled হয়, এবং শেষে স্কোর দেখা যায়। এতে তিনটি mode আছে: সহজ, মাঝারি, কঠিন।
 
 ## Android Studio ছাড়া কীভাবে APK বানাবেন
 
@@ -12,7 +12,7 @@
 
 ## নতুন প্রশ্ন যোগ করা
 
-`app/src/main/assets/pattern_questions_bn.json` ফাইলে একই ফরম্যাটে নতুন প্রশ্ন যোগ করুন। `easy`, `moderate`, এবং `tough` - প্রতিটি mode-এ অন্তত ২০টি প্রশ্ন থাকা দরকার।
+`app/src/main/assets/pattern_questions_bn.json` ফাইলে একই ফরম্যাটে নতুন প্রশ্ন যোগ করুন। `easy`, `moderate`, এবং `tough` - প্রতিটি mode-এ অন্তত 20টি প্রশ্ন থাকা দরকার।
 
 ## নিয়মিত অনলাইন আপডেট
 

@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private TextView subtitle;
     private TextView questionText;
     private TextView scoreText;
+    private TextView footerText;
     private ProgressBar progress;
     private LinearLayout optionsBox;
     private Button primaryButton;
@@ -72,7 +73,9 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(22), dp(28), dp(22), dp(28));
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        scrollView.addView(root);
+        scrollView.addView(root, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.MATCH_PARENT,
+                ScrollView.LayoutParams.MATCH_PARENT));
 
         title = text("", 30, true);
         subtitle = text("", 17, false);
@@ -98,6 +101,7 @@ public class MainActivity extends Activity {
 
         primaryButton = button("");
         updateButton = button("নতুন প্রশ্ন আনুন");
+        footerText = text("prepared by Saptarshi Das", 14, false);
 
         root.addView(title);
         root.addView(subtitle);
@@ -107,13 +111,17 @@ public class MainActivity extends Activity {
         root.addView(optionsBox);
         root.addView(primaryButton);
         root.addView(updateButton);
+        View spacer = new View(this);
+        root.addView(spacer, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+        root.addView(footerText);
 
         setContentView(scrollView);
     }
 
     private void showHome() {
-        title.setText("মনের প্যাটার্ন");
-        subtitle.setText("প্রতিটি সেশনে ২০টি ছোট প্যাটার্ন-ধাঁধা। ধীরে, আরামে, নিজের মতো করে।");
+        title.setText("maa er jonno -- for Chhabi Das");
+        subtitle.setText("প্রতিটি সেশনে ২০টি বাংলা mathematical aptitude প্রশ্ন। ধীরে, আরামে, নিজের মতো করে।");
         progress.setVisibility(View.GONE);
         scoreText.setText("");
         questionText.setText("আজকের অনুশীলন শুরু করবেন?");

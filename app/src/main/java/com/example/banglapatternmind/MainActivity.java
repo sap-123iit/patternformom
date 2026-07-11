@@ -26,7 +26,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,9 +36,12 @@ public class MainActivity extends Activity {
     private static final int SESSION_SIZE = 20;
     private static final String PREFS = "pattern_mind";
     private static final String CACHE_KEY = "cached_questions";
-    private static final String UPDATE_URL = "";
+    private static final String UPDATE_URL = "https://raw.githubusercontent.com/sap-123iit/patternformom/main/app/src/main/assets/pattern_questions_bn.json";
+    private static final String MODE_EASY = "easy";
+    private static final String MODE_MODERATE = "moderate";
+    private static final String MODE_TOUGH = "tough";
 
-    private final List<Question> allQuestions = new ArrayList<>();
+    private final Map<String, List<Question>> questionBanks = new HashMap<>();
     private final List<Question> session = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -49,12 +54,12 @@ public class MainActivity extends Activity {
     private TextView footerText;
     private ProgressBar progress;
     private LinearLayout optionsBox;
-    private Button primaryButton;
     private Button updateButton;
 
     private int index = 0;
     private int score = 0;
     private boolean answered = false;
+    private String currentMode = MODE_EASY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +76,13 @@ public class MainActivity extends Activity {
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(22), dp(28), dp(22), dp(28));
+        root.setPadding(dp(22), dp(28), dp(22), dp(72));
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         scrollView.addView(root, new ScrollView.LayoutParams(
                 ScrollView.LayoutParams.MATCH_PARENT,
                 ScrollView.LayoutParams.MATCH_PARENT));
 
-        title = text("", 30, true);
+        title = text("", 28, true);
         subtitle = text("", 17, false);
         subtitle.setGravity(Gravity.CENTER);
         subtitle.setLineSpacing(dp(3), 1.0f);
@@ -99,9 +104,9 @@ public class MainActivity extends Activity {
         optionsBox.setOrientation(LinearLayout.VERTICAL);
         optionsBox.setGravity(Gravity.CENTER);
 
-        primaryButton = button("");
         updateButton = button("নতুন প্রশ্ন আনুন");
         footerText = text("prepared by Saptarshi Das", 14, false);
+        footerText.setPadding(0, dp(16), 0, dp(8));
 
         root.addView(title);
         root.addView(subtitle);
@@ -109,7 +114,6 @@ public class MainActivity extends Activity {
         root.addView(scoreText);
         root.addView(questionText);
         root.addView(optionsBox);
-        root.addView(primaryButton);
         root.addView(updateButton);
         View spacer = new View(this);
         root.addView(spacer, new LinearLayout.LayoutParams(
@@ -121,25 +125,36 @@ public class MainActivity extends Activity {
 
     private void showHome() {
         title.setText("maa er jonno -- for Chhabi Das");
-        subtitle.setText("প্রতিটি সেশনে ২০টি বাংলা mathematical aptitude প্রশ্ন। ধীরে, আরামে, নিজের মতো করে।");
+        subtitle.setText("প্রতিটি সেশনে ২০টি number series প্রশ্ন। একটি মোড বেছে নিন।");
         progress.setVisibility(View.GONE);
         scoreText.setText("");
-        questionText.setText("আজকের অনুশীলন শুরু করবেন?");
+        questionText.setText("আজ কোন স্তরের অনুশীলন করবেন?");
         optionsBox.removeAllViews();
-        primaryButton.setText("২০ প্রশ্ন শুরু করুন");
-        primaryButton.setVisibility(View.VISIBLE);
-        primaryButton.setOnClickListener(v -> startSession());
+
+        Button easyButton = button("সহজ");
+        easyButton.setOnClickListener(v -> startSession(MODE_EASY));
+        Button moderateButton = button("মাঝারি");
+        moderateButton.setOnClickListener(v -> startSession(MODE_MODERATE));
+        Button toughButton = button("কঠিন");
+        toughButton.setOnClickListener(v -> startSession(MODE_TOUGH));
+        optionsBox.addView(easyButton);
+        optionsBox.addView(moderateButton);
+        optionsBox.addView(toughButton);
+
+        updateButton.setText("নতুন প্রশ্ন আনুন");
         updateButton.setVisibility(View.VISIBLE);
         updateButton.setOnClickListener(v -> updateQuestions());
     }
 
-    private void startSession() {
-        if (allQuestions.size() < SESSION_SIZE) {
-            dialog("প্রশ্ন কম আছে", "কমপক্ষে ২০টি প্রশ্ন দরকার।");
+    private void startSession(String mode) {
+        currentMode = mode;
+        List<Question> questions = questionBanks.get(mode);
+        if (questions == null || questions.size() < SESSION_SIZE) {
+            dialog("প্রশ্ন কম আছে", "এই মোডে কমপক্ষে ২০টি প্রশ্ন দরকার।");
             return;
         }
         session.clear();
-        List<Question> shuffled = new ArrayList<>(allQuestions);
+        List<Question> shuffled = new ArrayList<>(questions);
         Collections.shuffle(shuffled);
         session.addAll(shuffled.subList(0, SESSION_SIZE));
         index = 0;
@@ -151,13 +166,12 @@ public class MainActivity extends Activity {
         answered = false;
         Question q = session.get(index);
         title.setText("প্রশ্ন " + banglaNumber(index + 1) + " / " + banglaNumber(SESSION_SIZE));
-        subtitle.setText(q.category);
+        subtitle.setText(modeLabel(currentMode) + " | " + q.category);
         progress.setVisibility(View.VISIBLE);
         progress.setProgress(index + 1);
         scoreText.setText("সঠিক: " + banglaNumber(score));
         questionText.setText(q.prompt);
         optionsBox.removeAllViews();
-        primaryButton.setVisibility(View.GONE);
         updateButton.setVisibility(View.GONE);
 
         for (int i = 0; i < q.options.size(); i++) {
@@ -189,29 +203,31 @@ public class MainActivity extends Activity {
             }
         }
 
-        questionText.setText(correct ? "খুব ভালো! উত্তর ঠিক।" : "ভুল হয়েছে, সমস্যা নেই। ঠিক উত্তরটি সবুজ।");
-        primaryButton.setVisibility(View.VISIBLE);
-        primaryButton.setText(index == SESSION_SIZE - 1 ? "ফলাফল দেখুন" : "পরের প্রশ্ন");
-        primaryButton.setOnClickListener(v -> {
+        updateButton.setVisibility(View.VISIBLE);
+        updateButton.setText(index == SESSION_SIZE - 1 ? "ফলাফল দেখুন" : "পরের প্রশ্ন");
+        updateButton.setOnClickListener(v -> {
             index++;
             if (index >= SESSION_SIZE) showResult();
             else showQuestion();
         });
+        questionText.setText(correct ? "খুব ভালো! উত্তর ঠিক।" : "ভুল হয়েছে, সমস্যা নেই। ঠিক উত্তরটি সবুজ।");
     }
 
     private void showResult() {
         title.setText("সেশন শেষ");
-        subtitle.setText("আজকের ২০টি প্রশ্ন সম্পন্ন হয়েছে।");
+        subtitle.setText(modeLabel(currentMode) + " মোড সম্পন্ন হয়েছে।");
         progress.setVisibility(View.GONE);
         scoreText.setText("");
         optionsBox.removeAllViews();
         questionText.setText("আপনার স্কোর: " + banglaNumber(score) + " / " + banglaNumber(SESSION_SIZE) + "\n\nনিয়মিত ছোট অনুশীলনই সবচেয়ে ভালো।");
-        primaryButton.setVisibility(View.VISIBLE);
-        primaryButton.setText("আরেকটি সেশন");
-        primaryButton.setOnClickListener(v -> startSession());
-        updateButton.setVisibility(View.VISIBLE);
-        updateButton.setText("শুরুর পাতায় ফিরুন");
-        updateButton.setOnClickListener(v -> showHome());
+
+        Button againButton = button("এই মোডে আরেকটি সেশন");
+        againButton.setOnClickListener(v -> startSession(currentMode));
+        Button homeButton = button("শুরুর পাতায় ফিরুন");
+        homeButton.setOnClickListener(v -> showHome());
+        optionsBox.addView(againButton);
+        optionsBox.addView(homeButton);
+        updateButton.setVisibility(View.GONE);
     }
 
     private void loadQuestions() {
@@ -227,7 +243,7 @@ public class MainActivity extends Activity {
 
     private void updateQuestions() {
         if (UPDATE_URL.trim().isEmpty()) {
-            dialog("আপডেট প্রস্তুত", "নিয়মিত আপডেটের জন্য MainActivity.java ফাইলে UPDATE_URL-এ আপনার JSON লিংক বসাতে হবে। এখন অ্যাপের ভিতরের প্রশ্নব্যাংক থেকে সেশন তৈরি হচ্ছে।");
+            dialog("আপডেট প্রস্তুত", "নিয়মিত আপডেটের জন্য MainActivity.java ফাইলে UPDATE_URL-এ আপনার JSON লিংক বসাতে হবে। সেই JSON-এ easy, moderate এবং tough - তিনটি মোডের প্রশ্ন থাকবে।");
             return;
         }
         questionText.setText("নতুন প্রশ্ন আনা হচ্ছে...");
@@ -241,13 +257,13 @@ public class MainActivity extends Activity {
                 String line;
                 while ((line = reader.readLine()) != null) builder.append(line);
                 String json = builder.toString();
-                List<Question> parsed = parseQuestionList(json);
-                if (parsed.size() < SESSION_SIZE) throw new IllegalArgumentException("Need 20 questions");
+                Map<String, List<Question>> parsed = parseQuestionBank(json);
+                validateQuestionBank(parsed);
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(CACHE_KEY, json).apply();
                 mainHandler.post(() -> {
-                    allQuestions.clear();
-                    allQuestions.addAll(parsed);
-                    dialog("আপডেট হয়েছে", "নতুন প্রশ্নগুলো যোগ হয়েছে।");
+                    questionBanks.clear();
+                    questionBanks.putAll(parsed);
+                    dialog("আপডেট হয়েছে", "সহজ, মাঝারি এবং কঠিন - তিনটি মোডেই নতুন প্রশ্ন যোগ হয়েছে।");
                     showHome();
                 });
             } catch (Exception e) {
@@ -265,14 +281,30 @@ public class MainActivity extends Activity {
     }
 
     private void parseQuestions(String json) throws Exception {
-        allQuestions.clear();
-        allQuestions.addAll(parseQuestionList(json));
+        questionBanks.clear();
+        questionBanks.putAll(parseQuestionBank(json));
+        validateQuestionBank(questionBanks);
     }
 
-    private List<Question> parseQuestionList(String json) throws Exception {
-        List<Question> questions = new ArrayList<>();
+    private Map<String, List<Question>> parseQuestionBank(String json) throws Exception {
+        Map<String, List<Question>> banks = new HashMap<>();
         JSONObject root = new JSONObject(json);
-        JSONArray items = root.getJSONArray("questions");
+        if (root.has("modes")) {
+            JSONObject modes = root.getJSONObject("modes");
+            banks.put(MODE_EASY, parseQuestionList(modes.getJSONArray(MODE_EASY)));
+            banks.put(MODE_MODERATE, parseQuestionList(modes.getJSONArray(MODE_MODERATE)));
+            banks.put(MODE_TOUGH, parseQuestionList(modes.getJSONArray(MODE_TOUGH)));
+        } else {
+            List<Question> legacyQuestions = parseQuestionList(root.getJSONArray("questions"));
+            banks.put(MODE_EASY, legacyQuestions);
+            banks.put(MODE_MODERATE, legacyQuestions);
+            banks.put(MODE_TOUGH, legacyQuestions);
+        }
+        return banks;
+    }
+
+    private List<Question> parseQuestionList(JSONArray items) throws Exception {
+        List<Question> questions = new ArrayList<>();
         for (int i = 0; i < items.length(); i++) {
             JSONObject item = items.getJSONObject(i);
             JSONArray optionsJson = item.getJSONArray("options");
@@ -286,6 +318,20 @@ public class MainActivity extends Activity {
             ));
         }
         return questions;
+    }
+
+    private void validateQuestionBank(Map<String, List<Question>> banks) {
+        if (banks.get(MODE_EASY) == null || banks.get(MODE_EASY).size() < SESSION_SIZE
+                || banks.get(MODE_MODERATE) == null || banks.get(MODE_MODERATE).size() < SESSION_SIZE
+                || banks.get(MODE_TOUGH) == null || banks.get(MODE_TOUGH).size() < SESSION_SIZE) {
+            throw new IllegalArgumentException("Each mode needs at least 20 questions");
+        }
+    }
+
+    private String modeLabel(String mode) {
+        if (MODE_TOUGH.equals(mode)) return "কঠিন";
+        if (MODE_MODERATE.equals(mode)) return "মাঝারি";
+        return "সহজ";
     }
 
     private TextView text(String value, int sp, boolean bold) {
